@@ -17,7 +17,7 @@ function cleanText(text) {
 /**
  * Detect language script or preference
  */
-export function detectLanguageFromText(text, fallback = 'en-IN') {
+export function detectLanguageFromText(text, fallback = 'hi-IN') {
   if (!text) return fallback;
   if (/[\u0C80-\u0CFF]/.test(text)) return 'kn-IN'; // Kannada script
   if (/[\u0900-\u097F]/.test(text)) return 'hi-IN'; // Devanagari Hindi script
@@ -60,7 +60,7 @@ export function generateLocalCompanionDecision({
   elderProfile,
   medications = [],
   recentMood = null,
-  selectedLang = 'en-IN',
+  selectedLang = 'hi-IN',
   eventId = null,
 }) {
   const text = cleanText(transcript);
@@ -277,14 +277,20 @@ export async function generateGeminiCompanionDecision(params) {
 Her daughter is Priya. Her current medications: ${medications.map((m) => `${m.name} (${m.status})`).join(', ')}.
 Recent mood: ${recentMood || 'normal'}.
 
+LANGUAGE RULES:
+- The elder's preferred language is Hindi (hi-IN). ALWAYS reply in Hindi by default.
+- If the elder speaks in Kannada, reply in Kannada (kn-IN).
+- If the elder speaks in English, reply in Hindi unless they explicitly ask for English.
+- Detected language for this message: ${lang}
+
 Task: Read the elder's spoken message: "${transcript}".
 Produce a JSON response matching Schema B (AgentDecision):
 {
   "severity": "low" | "medium" | "high" | "critical",
   "action": "monitor" | "voice_check" | "notify_family" | "call_emergency",
   "reasoning_trace": "Clinical & empathetic reasoning explanation (under 30 words)",
-  "voice_message_to_elder": "Warm, gentle, natural spoken reply addressed to Kamala ji (under 25 words). Use language ${lang}.",
-  "family_message": "Informative status message for daughter Priya (under 20 words)",
+  "voice_message_to_elder": "Warm, gentle, natural spoken reply addressed to Kamala ji (under 25 words). Must be in ${lang === 'kn-IN' ? 'Kannada' : 'Hindi'}.",
+  "family_message": "Informative status message for daughter Priya in English (under 20 words)",
   "language_code": "${lang}"
 }
 Return ONLY pure JSON without markdown backticks.`;

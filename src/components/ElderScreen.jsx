@@ -144,6 +144,133 @@ const I18N = {
     drawerSleep: '🌙 Sleep Quality',
     drawerMobility: '🚶 Mobility steadiness',
   },
+  'hi-IN': {
+    appName: 'शास्त्र गार्डियन',
+    appSub: 'बुज़ुर्ग साथी एवं सुरक्षा',
+    familySynced: 'परिवार से जुड़ा',
+    calmStatus: 'कमला सुरक्षित और आरामदायक हैं',
+    calmSub: 'शास्त्र विज़न सक्रिय • स्वास्थ्य और मुद्रा सामान्य',
+    listening: 'सुन रहा है...',
+    listeningSub: 'अपनी भाषा में स्वाभाविक रूप से बोलें',
+    sentConfirmation: '✓ देखभाल टीम को भेजा गया',
+    sosSentStatus: 'आपातकालीन SOS भेजा गया',
+    sosSentSub: '112 और परिवार को सूचित किया गया • मदद आ रही है',
+    speakingStatus: 'साथी बोल रहा है...',
+    speakingSub: 'सहानुभूतिपूर्ण वॉइस सहायक जवाब दे रहा है',
+    reconnectingStatus: 'क्लाउड से पुनः जुड़ रहा है',
+    reconnectingSub: 'लाइव मेडिकल स्ट्रीम पुनः स्थापित हो रही है',
+
+    // Companion Persona
+    companionGreeting: 'नमस्ते, कमला जी',
+    companionGreetingSub: 'मैं आपकी व्यक्तिगत देखभाल साथी हूँ। आज आप कैसा महसूस कर रही हैं?',
+    companionPresenceHint: 'सवाल पूछने, लक्षण बताने या बातचीत करने के लिए कभी भी टैप करें',
+    companionIdleBubble: 'अपने स्वास्थ्य, दवाइयों या दिनचर्या के बारे में मुझसे बेझिझक बात करें।',
+    companionYouSaid: 'आपने कहा:',
+    companionReplayBtn: '🔊 आवाज़ दोहराएं',
+
+    // Family Glance Card
+    familyGlanceTitle: 'परिवार का संदेश',
+    familyGlanceSender: 'प्रिया (बेटी)',
+    familyGlanceTime: '10 मिनट पहले',
+    familyGlanceNote: 'अम्मा, नाश्ता किया? दोपहर की दवाई मत भूलना, शाम को मिलने आ रही हूँ! ❤️',
+    familyQuickReply: '❤️ "मैं ठीक हूँ" भेजें',
+    familyReplySent: '✓ प्रिया को जवाब भेजा गया',
+
+    // Primary SOS Tile
+    sosBadge: 'आपातकालीन सहायता • 112',
+    sosBtnLabel: 'मुझे मदद चाहिए',
+    sosBtnSub: '112 और परिवार को तुरंत सूचना',
+    sosBtnActiveLabel: 'सहायता अनुरोध भेजा गया',
+    sosBtnActiveSub: '112 और परिवार को सतर्क किया गया • मदद आ रही है',
+
+    // 3 Major Action Buttons
+    callFamilyBadge: 'परिवार संपर्क',
+    callFamilyBtn: 'प्रिया को कॉल करें',
+    callFamilySub: 'प्रिया (बेटी) • तुरंत फ़ोन कॉल',
+    callFamilyStatus: 'प्रिया को कॉल किया जा रहा है...',
+
+    // Daily Mood / Rhythm Row
+    moodRowTitle: 'आज का स्वास्थ्य और लय',
+    moodGood: 'ऊर्जावान',
+    moodCalm: 'शांत',
+    moodResting: 'आराम',
+    moodRecordedToast: 'स्वास्थ्य स्थिति परिवार के साथ साझा की गई',
+
+    // Voice Intercom Dock
+    voiceBadge: 'देखभाल साथी',
+    voiceIntercomLabel: 'अपने साथी से बेझिझक बात करें',
+    voiceIntercomSub: 'स्वास्थ्य प्रश्न, लक्षण या सामान्य बातचीत',
+    talkBtnTapToSpeak: 'मुझसे बात करने के लिए टैप करें',
+    talkBtnListening: 'आपकी बात सुन रहे हैं...',
+    talkBtnSpeakNow: 'अब स्पष्ट रूप से बोलें',
+
+    // Medication Tracker
+    medTrackerTitle: 'दवाई अनुसूची',
+    medTakenBadge: 'ली गई',
+    medDueBadge: 'अभी लें',
+    medMarkTakenBtn: '✓ ले ली',
+
+    // Fall & Vision Perception Translations
+    fallAlertTitle: 'क्या आप गिर गई हैं?',
+    fallAlertPrompt: 'शास्त्र विज़न ने अचानक गिरावट या मुद्रा में बदलाव का पता लगाया है। क्या आप ठीक हैं?',
+    fallVoiceCheck: 'कमला जी, क्या आप गिर गई हैं? क्या आप ठीक हैं? कृपया बोलें या बटन दबाएं।',
+    emotionSadPrompt: 'मुझे लगा कि आप उदास या परेशान हैं। मैं आपके साथ हूँ, क्या आपको किसी मदद की ज़रूरत है?',
+    emotionFearPrompt: 'घबराएं नहीं, आप सुरक्षित हैं। मैं आपके साथ हूँ।',
+    inactivityPrompt: 'कमला जी, बस यह देखने के लिए कि आप आराम से और ठीक हैं।',
+
+    // Escalation Mode Translations
+    alertTitle: 'क्या आप गिर गई हैं? क्या आप ठीक हैं?',
+    alertSub: 'क्या आप गिरी हैं? क्या आप सुरक्षित हैं? कृपया पुष्टि करें अन्यथा हम मदद बुलाएंगे।',
+    yesImFineBtn: 'मैं ठीक हूँ — टाइमर रोकें',
+    yesImFineSub: 'आपातकालीन अलर्ट रद्द करें',
+    fineConfirmationTts: 'आप सुरक्षित हैं, यह जानकर खुशी हुई। अलर्ट रद्द किया गया।',
+    escalationWarning: 'कोई प्रतिक्रिया न मिलने पर परिवार और 112 को सूचित किया जाएगा',
+
+    // Escalation Tiers
+    tier1: 'स्तर १: वॉयस चेक-इन',
+    tier2: 'स्तर २: परिवार को कॉल और अलर्ट',
+    tier3: 'स्तर ३: आपातकालीन 112 सहायता',
+    secondsShort: 'से',
+
+    // Alert Actions & Subtexts
+    streamingAudioSub: 'लाइव ऑडियो चल रहा है',
+    speakToExplainSub: 'अपनी स्थिति बताने के लिए बोलें',
+    sosEmergencyBadge: '(112 आपातकालीन)',
+
+    // Voice & Telemetry
+    telemetryHubLabel: 'हब लिंक:',
+    telemetryHubConnected: 'जुड़ा हुआ',
+    telemetryHubReconnecting: 'पुनः जुड़ रहा है...',
+    telemetryVoiceLabel: 'वॉइस:',
+    telemetryVoiceReady: 'तैयार',
+    telemetryVoiceListening: 'सुन रहा है',
+    telemetryVoiceSpeaking: 'बोल रहा है',
+    toolVisionSim: '👁️ विज़न सिम',
+    toolCheckIns: '📋 चेक-इन',
+    toolSteadiness: '🚶 स्थिरता जांच',
+
+    // Voice States
+    voiceStateListening: '● सुन रहा है',
+    voiceStateSpeaking: '● बोल रहा है',
+    voiceStateReady: '● तैयार',
+    liveSpeechStream: 'लाइव स्पीच स्ट्रीम:',
+    dialFamilyPill: 'कॉल करें 📞',
+    voiceIssueHeadline: 'वॉइस समस्या — पुनः प्रयास करें',
+    voiceIssueDetail: 'माइक्रोफ़ोन अनुमति जांचें',
+
+    // Drawers
+    drawerVisionTitle: '👁️ शास्त्र विज़न ट्रिगर:',
+    drawerTriggerFall: '💥 गिरावट पहचान',
+    drawerTriggerSad: '😢 भावनात्मक संकट (उदासी)',
+    drawerTriggerFear: '😨 भावनात्मक संकट (भय)',
+    drawerTriggerInactivity: '🛑 निष्क्रियता पहचान',
+    drawerCheckInTitle: '📋 स्वास्थ्य जांच:',
+    drawerCognitive: '🧠 संज्ञानात्मक जांच',
+    drawerBreakfast: '🥣 नाश्ता',
+    drawerLunch: '🍲 दोपहर का भोजन',
+    drawerSleep: '🌙 नींद की गुणवत्ता',
+    drawerMobility: '🚶 चलने की स्थिरता',
+  },
   'kn-IN': {
     appName: 'ಶಾಸ್ತ್ರ ಗಾರ್ಡಿಯನ್',
     appSub: 'ಹಿರಿಯರ ಸುರಕ್ಷತೆ & ಒಡನಾಡಿ',
@@ -342,7 +469,7 @@ export default function ElderScreen() {
   const [isSendingStatus, setIsSendingStatus] = useState(false);
   const statusInputRef = useRef(null);
   const [lastSpokenText, setLastSpokenText] = useState(null);
-  const [selectedLang] = useState('en-IN');
+  const [selectedLang, setSelectedLang] = useState('hi-IN');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showCheckInMenu, setShowCheckInMenu] = useState(false);
   const [showVisionMenu, setShowVisionMenu] = useState(false);
@@ -439,13 +566,26 @@ export default function ElderScreen() {
 
   // Dynamically personalize text with active elder identity (memoized to prevent re-render loops)
   const elderFirstName = elderProfile?.name?.split(' ')[0] || 'Kamala';
-  const t = useMemo(() => ({
-    ...I18N['en-IN'],
-    calmStatus: `${elderFirstName} is Safe & Comfortable`,
-    companionGreeting: `Hello, ${elderFirstName}`,
-    familyGlanceSender: 'Priya (Daughter)',
-    familyReplySent: '✓ Quick reply sent to Priya',
-  }), [elderFirstName]);
+  const t = useMemo(() => {
+    const base = I18N[selectedLang] || I18N['en-IN'];
+    const isHindi = selectedLang === 'hi-IN';
+    const isKannada = selectedLang === 'kn-IN';
+    return {
+      ...base,
+      calmStatus: isHindi
+        ? `${elderFirstName} सुरक्षित और आरामदायक हैं`
+        : isKannada
+          ? `${elderFirstName} ಅವರು ಸುರಕ್ಷಿತವಾಗಿದ್ದಾರೆ`
+          : `${elderFirstName} is Safe & Comfortable`,
+      companionGreeting: isHindi
+        ? `नमस्ते, ${elderFirstName} जी`
+        : isKannada
+          ? `ನಮಸ್ಕಾರ, ${elderFirstName} ಅವರೇ`
+          : `Hello, ${elderFirstName}`,
+      familyGlanceSender: isHindi ? 'प्रिया (बेटी)' : isKannada ? 'ಪ್ರಿಯಾ (ಮಗಳು)' : 'Priya (Daughter)',
+      familyReplySent: isHindi ? '✓ प्रिया को जवाब भेजा गया' : isKannada ? '✓ ಪ್ರಿಯಾಗೆ ಉತ್ತರಿಸಲಾಗಿದೆ' : '✓ Quick reply sent to Priya',
+    };
+  }, [elderFirstName, selectedLang]);
 
   // Live Announcement Handshake: Broadcast once on initial WebSocket connection
   const hasAnnouncedRef = useRef(false);
@@ -557,12 +697,12 @@ export default function ElderScreen() {
     setOutgoingCall(null);
 
     const name = elderProfile?.name?.split(' ')[0] || 'Kamala';
-    const empatheticPrompt = `${name}, did you fall? Are you fine? Please confirm if you are okay.`;
+    const empatheticPrompt = t.fallVoiceCheck;
     setFallReason(customReason || empatheticPrompt);
     setFallModalOpen(true);
     playEmergencyAlarm();
     speak(empatheticPrompt, selectedLang);
-  }, [elderProfile, selectedLang, speak]);
+  }, [elderProfile, selectedLang, speak, t]);
 
   /**
    * Reset the active backend emergency/escalation mode.
@@ -691,7 +831,7 @@ export default function ElderScreen() {
     setSosSent(false);
     setFallModalOpen(false);
     playSuccessChime();
-    speak('Emergency alert cancelled. You are safe.', selectedLang);
+    speak(t.fineConfirmationTts, selectedLang);
 
     const elderName = elderProfile?.name || 'Kamala';
     sendMessage({

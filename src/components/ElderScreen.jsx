@@ -1309,17 +1309,22 @@ export default function ElderScreen() {
       language: selectedLang,
       duration: 8,
       onTranscript: async (transcript) => {
-        if (!transcript) return;
-        setLastSpokenText(transcript);
+        const clean = (transcript || '').trim();
+        if (!clean || clean.length < 2 || /^[\s\p{P}\p{S}]+$/u.test(clean)) {
+          console.log('Spurious/noise speech input ignored:', transcript);
+          return;
+        }
+        setLastSpokenText(clean);
         playSuccessChime();
 
-        // 1. Check for vocal cancellation
-        const lower = transcript.toLowerCase();
+        // 1. Check for vocal cancellation (using word boundaries to avoid false positives)
+        const lower = clean.toLowerCase();
         if (
-          lower.includes('fine') ||
-          lower.includes('okay') ||
-          lower.includes('good') ||
-          lower.includes('safe')
+          /\b(fine|okay|ok|good|safe|theek|arama)\b/i.test(lower) ||
+          lower.includes('all good') ||
+          lower.includes('i am fine') ||
+          lower.includes('i am safe') ||
+          lower.includes('sab theek')
         ) {
           handleFallModalSafe();
           return;
@@ -1335,12 +1340,12 @@ export default function ElderScreen() {
         ];
         const isCriticalVocal = emergencyKeywords.some((kw) => lower.includes(kw));
         if (isCriticalVocal) {
-          console.log('🚨 Critical distress mention detected in elder voice:', transcript);
+          console.log('🚨 Critical distress mention detected in elder voice:', clean);
           setActiveCall(null);
           setIncomingCall(null);
           setOutgoingCall(null);
           // Show 15s countdown timer — handleSOS fires via onEmergencyEscalate when timer expires
-          triggerFallAlert(transcript);
+          triggerFallAlert(clean);
           return;
         }
 
@@ -1348,7 +1353,7 @@ export default function ElderScreen() {
         setAiAgentStatus({
           action: 'voice_check',
           message: '⏳ Consulting Hosted LLM Agent...',
-          reasoning: `Voice query "${transcript}" dispatched to Hosted AI Brain.`,
+          reasoning: `Voice query "${clean}" dispatched to Hosted AI Brain.`,
           severity: 'low',
           timestamp: Date.now(),
         });
@@ -1357,7 +1362,7 @@ export default function ElderScreen() {
         const payload = buildSensorEvent({
           eventType: 'voice_input',
           confidence: 1.0,
-          voiceTranscript: transcript,
+          voiceTranscript: clean,
           sender: 'Kamala Devi (Elder)',
         });
 
@@ -1365,7 +1370,7 @@ export default function ElderScreen() {
         sendMessage({
           type: 'elder_voice',
           elder_id: ELDER_ID,
-          transcript: transcript,
+          transcript: clean,
           timestamp: new Date().toISOString(),
         });
 
@@ -3049,20 +3054,22 @@ export default function ElderScreen() {
             4. Ambient Telemetry Glass Footer
             ============================================================ */}
         <footer className="glass-telemetry-footer">
-          <div className="telemetry-item">
-            <span className="telemetry-icon">⚡</span>
-            <span className="telemetry-label">{t.telemetryHubLabel}</span>
-            <span className={`telemetry-status status-${isConnected ? 'online' : 'offline'}`}>
-              {isConnected ? t.telemetryHubConnected : t.telemetryHubReconnecting}
-            </span>
-          </div>
+          <div className="telemetry-items-group">
+            <div className="telemetry-item">
+              <span className="telemetry-icon">⚡</span>
+              <span className="telemetry-label">{t.telemetryHubLabel}</span>
+              <span className={`telemetry-status status-${isConnected ? 'online' : 'offline'}`}>
+                {isConnected ? t.telemetryHubConnected : t.telemetryHubReconnecting}
+              </span>
+            </div>
 
-          <div className="telemetry-item">
-            <span className="telemetry-icon">🎙️</span>
-            <span className="telemetry-label">{t.telemetryVoiceLabel}</span>
-            <span className="telemetry-status status-online">
-              {isListening ? t.telemetryVoiceListening : isSpeaking ? t.telemetryVoiceSpeaking : t.telemetryVoiceReady}
-            </span>
+            <div className="telemetry-item">
+              <span className="telemetry-icon">🎙️</span>
+              <span className="telemetry-label">{t.telemetryVoiceLabel}</span>
+              <span className="telemetry-status status-online">
+                {isListening ? t.telemetryVoiceListening : isSpeaking ? t.telemetryVoiceSpeaking : t.telemetryVoiceReady}
+              </span>
+            </div>
           </div>
 
           <div className="telemetry-buttons-group">

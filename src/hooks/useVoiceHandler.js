@@ -181,11 +181,12 @@ export function useVoiceHandler() {
     setIsListening(false);
     setSecondsLeft(0);
     setInterimText('');
-
     const cb = onTranscriptCallbackRef.current;
     onTranscriptCallbackRef.current = null;
 
-    const finalResult = (latestSpokenTranscriptRef.current || accumulatedTranscriptRef.current).trim();
+    const rawResult = (latestSpokenTranscriptRef.current || accumulatedTranscriptRef.current).trim();
+    const isSpurious = !rawResult || rawResult.length < 2 || /^[\s\p{P}\p{S}]+$/u.test(rawResult);
+    const finalResult = isSpurious ? '' : rawResult;
 
     if (finalResult) {
       log(`📝 Captured Speech: "${finalResult}"`, 'success');
@@ -332,6 +333,8 @@ export function useVoiceHandler() {
       // Flag to track fatal errors (like mic permission denied)
       let fatalError = false;
 
+      const isMobileDevice = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android|Mobile/i.test(navigator.userAgent);
+
       // 2. SpeechRecognition instance with auto-keepalive during the active listening window
       const startRecognitionSession = (delayMs = 0) => {
         if (!isSessionActiveRef.current || fatalError) return;
@@ -341,13 +344,14 @@ export function useVoiceHandler() {
 
           try {
             const rec = new SpeechRecognition();
-            rec.continuous = true;
+            // iOS Safari WebKit throws or fails when continuous is true; use false on mobile
+            rec.continuous = !isMobileDevice;
             rec.interimResults = true;
-            rec.maxAlternatives = 3;
+            rec.maxAlternatives = 1;
             rec.lang = targetLang;
 
             rec.onstart = () => {
-              log(`🎙️ Microphone active & listening (lang: ${targetLang})`, 'success');
+              log(`🎙️ Microphone active & listening (${isMobileDevice ? 'Mobile' : 'Desktop'} • ${targetLang})`, 'success');
               setIsListening(true);
             };
 
@@ -372,44 +376,45 @@ export function useVoiceHandler() {
 
               const fullCombined = (accumulatedTranscriptRef.current + ' ' + sessionInterim).trim().replace(/\s+/g, ' ');
 
-              if (fullCombined) {
+              // Filter out spurious / punctuation-only noise artifacts on mobile
+              const isNoise = !fullCombined || fullCombined.length < 1 || /^[\s\p{P}\p{S}]+$/u.test(fullCombined);
+
+              if (fullCombined && !isNoise) {
                 latestSpokenTranscriptRef.current = fullCombined;
                 setInterimText(fullCombined);
                 log(`📝 Heard: "${fullCombined}"`, 'success');
 
                 // ⚡ Smart Voice Activity Snapping:
-                // 1.5s quiet buffer prevents cutting off seniors mid-sentence
+                // Slightly longer quiet buffer (1800ms) on mobile so pauses don't cut off elder speech
                 if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
+                const silenceWait = isMobileDevice ? 1800 : 1500;
                 silenceTimeoutRef.current = setTimeout(() => {
                   finishListening();
-                }, 1500);
+                }, silenceWait);
               }
             };
 
             rec.onerror = (e) => {
               log(`Speech Recognition event: ${e.error}`, ['no-speech', 'aborted'].includes(e.error) ? 'info' : 'error');
               
-              // Benign errors: Chrome paused or heard no speech yet
+              // Benign non-errors: silence or user interruption (never show scary error banners)
               if (e.error === 'no-speech' || e.error === 'aborted') {
                 return;
               }
 
-              if (e.error === 'not-allowed') {
+              if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
                 fatalError = true;
-                setAutoClearingError('Microphone access blocked. Please allow mic in browser settings.', 5000);
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                  navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {});
-                }
+                setAutoClearingError('Microphone permission needed. Please allow microphone access in your browser settings.', 5000);
                 finishListening();
               } else if (e.error === 'audio-capture') {
                 fatalError = true;
                 setAutoClearingError('No microphone detected. Please check your audio device.', 4000);
                 finishListening();
               } else if (e.error === 'network') {
-                // Network hiccup with Google speech servers; will retry in onend
-                setAutoClearingError('Voice network busy. Reconnecting...', 2000);
+                // Transient mobile speech network reconnect
+                log('Speech server network hiccup; maintaining session...', 'info');
               } else {
-                setAutoClearingError(`Mic notice: ${e.error}`, 3000);
+                log(`Microphone notice: ${e.error}`, 'info');
               }
             };
 
@@ -427,14 +432,15 @@ export function useVoiceHandler() {
               }
 
               // If countdown time is still left, keep the microphone alive!
-              // (Chrome SpeechRecognition frequently ends on brief silence / pauses)
+              // On mobile (where continuous=false), onend fires after each pause.
+              // Auto-resume with a 140ms debounce to avoid InvalidStateError in WebKit.
               if (listeningSecondsLeftRef.current > 0) {
-                log('🔄 Chrome paused recognition stream; auto-resuming mic...', 'info');
+                const resumeDelay = isMobileDevice ? 140 : 60;
                 setTimeout(() => {
                   if (isSessionActiveRef.current && listeningSecondsLeftRef.current > 0) {
                     startRecognitionSession(0);
                   }
-                }, 60);
+                }, resumeDelay);
                 return;
               }
 
@@ -442,15 +448,21 @@ export function useVoiceHandler() {
             };
 
             recognitionRef.current = rec;
-            rec.start();
+            try {
+              rec.start();
+            } catch (startErr) {
+              if (startErr.name !== 'InvalidStateError') {
+                log(`SpeechRecognition start note: ${startErr.message}`, 'info');
+              }
+            }
           } catch (err) {
-            log(`SpeechRecognition start note: ${err.message}`, 'info');
+            log(`SpeechRecognition launch error: ${err.message}`, 'info');
             if (isSessionActiveRef.current && listeningSecondsLeftRef.current > 0) {
               setTimeout(() => {
                 if (isSessionActiveRef.current && listeningSecondsLeftRef.current > 0) {
                   startRecognitionSession(0);
                 }
-              }, 100);
+              }, 140);
             } else {
               finishListening();
             }

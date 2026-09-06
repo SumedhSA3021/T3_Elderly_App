@@ -2005,6 +2005,12 @@
   gap: 16px;
 }
 
+.telemetry-items-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .telemetry-item {
   display: flex;
   align-items: center;
@@ -3288,17 +3294,18 @@
    ============================================================ */
 @media (max-width: 480px) {
   .liquid-glass-root {
-    padding: 14px 12px 28px;
+    padding: max(12px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   }
   .companion-top-nav {
     padding: 10px 14px;
     border-radius: 20px;
+    gap: 8px;
   }
   .companion-brand-title {
-    font-size: 13.5px;
+    font-size: 13px;
   }
   .companion-time-subtitle {
-    font-size: 11px;
+    font-size: 10.5px;
   }
   .glass-med-pill {
     height: 32px;
@@ -3309,78 +3316,142 @@
     font-size: 11px;
   }
   .companion-sanctuary {
-    padding: 26px 18px;
+    padding: 24px 16px;
     border-radius: 28px;
-    gap: 20px;
+    gap: 18px;
   }
   .companion-greeting-title {
-    font-size: 25px;
+    font-size: 24px;
   }
   .companion-greeting-subtitle {
-    font-size: 14px;
+    font-size: 13.5px;
   }
   .companion-presence-cluster {
-    width: 104px;
-    height: 104px;
+    width: 96px;
+    height: 96px;
   }
   .btn-companion-core {
-    width: 78px;
-    height: 78px;
+    width: 74px;
+    height: 74px;
   }
   .icon-companion-mic {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
   .companion-actions-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
   .action-card-family, .action-card-sos {
-    padding: 20px 18px;
-    border-radius: 24px;
+    padding: 18px 16px;
+    border-radius: 22px;
   }
   .action-main-title {
-    font-size: 18px;
+    font-size: 17px;
   }
   .wellness-pills-row {
-    gap: 8px;
+    gap: 6px;
   }
   .wellness-pill-btn {
-    min-height: 54px;
-    padding: 10px 6px;
+    min-height: 52px;
+    padding: 8px 4px;
   }
   .wellness-emoji {
-    font-size: 18px;
+    font-size: 17px;
   }
   .wellness-label {
-    font-size: 12.5px;
+    font-size: 12px;
   }
+  /* Floating Action Button */
   .med-fab-button {
-    width: 56px;
-    height: 56px;
-    bottom: 20px;
-    right: 18px;
+    width: 52px;
+    height: 52px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    right: 16px;
   }
   .med-fab-icon {
-    font-size: 24px;
+    font-size: 22px;
   }
   .med-fab-panel {
-    right: 12px;
-    bottom: 88px;
-    width: calc(100vw - 24px);
+    right: 10px;
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px);
+    width: calc(100vw - 20px);
+    max-width: 420px;
+  }
+  /* Drawers and Simulator buttons */
+  .glass-drawer-panel {
+    padding: 16px 14px;
+    border-radius: 20px;
+  }
+  .drawer-buttons-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .drawer-btn {
+    min-height: 44px;
+    font-size: 11px;
+    padding: 8px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Ambient Telemetry Footer */
+  .glass-telemetry-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .telemetry-items-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .telemetry-buttons-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    gap: 6px;
+  }
+  .btn-footer-tool {
+    min-height: 38px;
+    padding: 6px 8px;
+    font-size: 11px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+  }
+  /* Call overlay */
+  .incoming-call-card,
+  .active-call-card {
+    padding: 24px 16px;
+    border-radius: 24px;
+    max-width: calc(100vw - 28px);
+  }
+  .call-actions-row {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .btn-call-accept,
+  .btn-call-decline {
+    min-height: 48px;
+    font-size: 15px;
   }
   .companion-nav-tabs {
     gap: 4px;
     padding: 3px;
   }
   .nav-tab-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-    gap: 6px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    gap: 5px;
   }
   .profile-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 14px;
   }
   .profile-form-grid {
     grid-template-columns: 1fr;
@@ -3393,5 +3464,20 @@
     flex-direction: column;
     align-items: stretch;
     text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .companion-greeting-title {
+    font-size: 21px;
+  }
+  .companion-greeting-subtitle {
+    font-size: 12.5px;
+  }
+  .drawer-btn {
+    font-size: 10px;
+  }
+  .btn-footer-tool {
+    font-size: 10px;
   }
 }

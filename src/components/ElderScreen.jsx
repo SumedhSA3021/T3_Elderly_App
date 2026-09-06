@@ -612,7 +612,7 @@ export default function ElderScreen() {
   const lastTalkTimeRef = useRef(0);
   // Cooldown guard: suppress new alerts for N ms after user dismisses one
   const alertDismissedAtRef = useRef(0);
-  const ALERT_COOLDOWN_MS = 60000; // 60-second rock-solid cooldown after dismissal
+  const ALERT_COOLDOWN_MS = 12000; // 12-second clean cooldown after dismissal
   const fallModalOpenRef = useRef(false);
   fallModalOpenRef.current = fallModalOpen;
   const [isEmergencyEscalated, setIsEmergencyEscalated] = useState(false);
@@ -674,35 +674,38 @@ export default function ElderScreen() {
    * Empathetic Fall Emergency Trigger:
    * Displays compassionate "Did you fall? Are you fine?" prompt and speaks to senior.
    * Clears any active call overlays so the critical emergency interface has 100% focus.
+   * Supports isForce=true to bypass cooldown for deliberate simulation/test events.
    */
-  const triggerFallAlert = useCallback((customReason) => {
-    // 1. Active cooldown protection: elder just pressed "I AM OKAY"
+  const triggerFallAlert = useCallback((customReason, isForce = false) => {
+    // 1. Active cooldown protection: elder just pressed "I AM OKAY" (bypassed if explicit simulator/forced trigger)
     const timeSinceDismissal = Date.now() - alertDismissedAtRef.current;
-    if (timeSinceDismissal < ALERT_COOLDOWN_MS) {
+    if (!isForce && timeSinceDismissal < ALERT_COOLDOWN_MS) {
       console.log(`🛡️ Suppressing fall alert: elder confirmed safe ${Math.round(timeSinceDismissal / 1000)}s ago (cooldown: ${ALERT_COOLDOWN_MS / 1000}s)`);
       return;
     }
     // 2. Do not re-trigger if modal is already active
-    if (fallModalOpenRef.current || emergencyActiveRef.current) {
+    if (fallModalOpenRef.current) {
       console.log('🛡️ Fall alert modal already active — ignoring re-trigger');
       return;
     }
+
+    console.log('🚨 [FALL_ALERT] Launching Full-Screen Fall Emergency Modal:', customReason);
 
     // ALWAYS show the 15-second countdown timer first — never skip to escalated
     setIsEmergencyEscalated(false);
     emergencyActiveRef.current = true;
 
+    // Strict Life-Safety Precedence: Clear any active or pending phone calls immediately!
     setActiveCall(null);
     setIncomingCall(null);
     setOutgoingCall(null);
 
-    const name = elderProfile?.name?.split(' ')[0] || 'Kamala';
     const empatheticPrompt = t.fallVoiceCheck;
     setFallReason(customReason || empatheticPrompt);
     setFallModalOpen(true);
     playEmergencyAlarm();
     speak(empatheticPrompt, selectedLang);
-  }, [elderProfile, selectedLang, speak, t]);
+  }, [selectedLang, speak, t]);
 
   /**
    * Reset the active backend emergency/escalation mode.
@@ -828,8 +831,12 @@ export default function ElderScreen() {
    */
   const handleCancelSOS = useCallback(async () => {
     hasSentEmergencyRef.current = false;
+    emergencyActiveRef.current = false;
+    setIsEmergencyEscalated(false);
+    setBackendAlertActive(false);
     setSosSent(false);
     setFallModalOpen(false);
+    alertDismissedAtRef.current = Date.now();
     playSuccessChime();
     speak(t.fineConfirmationTts, selectedLang);
 
@@ -1565,6 +1572,12 @@ export default function ElderScreen() {
         (payload.action === 'call' && (payload.caller_name || payload.sender));
 
       if (isCallInvite) {
+        // Strict Life-Safety Precedence: NEVER interrupt or ring during active emergency or fall countdown!
+        if (fallModalOpenRef.current || emergencyActiveRef.current || hasSentEmergencyRef.current || sosSent) {
+          console.log('🛡️ Incoming call invite suppressed because Fall Alert / Emergency is currently active');
+          return;
+        }
+
         const currentElderName = (elderProfile?.name || 'Kamala Devi').toLowerCase();
         if (
           lowerText.includes('elder initiated phone call') ||
@@ -1606,16 +1619,14 @@ export default function ElderScreen() {
       }
 
       // Safe / Alert Cancellation broadcasts from elder tablet or caregiver
-      if (
+      const isExplicitSafeResolution =
         type === 'alert_cancelled' ||
         payload.type === 'alert_cancelled' ||
         payload.status === 'safe' ||
-        lowerText.includes('alert cancelled') ||
-        lowerText.includes('confirmed safe') ||
-        lowerText.includes('confirmed: i am safe') ||
-        lowerText.includes('cancel emergency') ||
-        lowerText.includes('alert resolved')
-      ) {
+        action === 'resolve' ||
+        /\b(alert_cancelled|alert cancelled|confirmed safe|confirmed: i am safe|i am safe|cancel emergency|alert resolved|elder is safe)\b/i.test(rawText);
+
+      if (isExplicitSafeResolution) {
         stop();
         hasSentEmergencyRef.current = false;
         emergencyActiveRef.current = false;
@@ -1700,9 +1711,9 @@ export default function ElderScreen() {
       }
 
       // =========================================================================
-      // 1. CRITICAL LIFE-SAFETY EMERGENCY & PRIVILEGE ESCALATION (TOP PRIORITY)
+      // 1. CRITICAL LIFE-SAFETY EMERGENCY & FALL DETECTION (TOP PRIORITY)
       // Displays the Full-Screen "DID YOU FALL? ARE YOU OKAY?" countdown modal.
-      // Critical mentions MUST NEVER trigger an incoming phone call!
+      // Critical emergency MUST NEVER trigger an incoming phone call!
       // =========================================================================
       const isEmergencyAction =
         action === 'call_emergency' ||
@@ -1718,7 +1729,20 @@ export default function ElderScreen() {
         eventType === 'manual_panic' ||
         payload.type === 'fall' ||
         payload.type === 'manual_panic' ||
-        payload.type === 'FallEmergency';
+        payload.type === 'FallEmergency' ||
+        payload.event_type === 'fall';
+
+      // Hub AI AgentDecision / FamilyAlert for Fall:
+      // Hub sends { type: 'AgentDecision', action: 'voice_check', severity: 'high', reasoning_trace: 'Fall detected...' }
+      // Hub also sends { type: 'FamilyAlert', message: 'A fall was detected...', severity: 'high' }
+      const isHubFallDecision =
+        (type === 'agentdecision' || payload.type === 'AgentDecision') &&
+        (action === 'voice_check' || severity === 'high' || severity === 'critical') &&
+        (allTextHaystack.includes('fall') || allTextHaystack.includes('posture collapse') || allTextHaystack.includes('posture drop') || allTextHaystack.includes('fallen'));
+
+      const isHubFamilyFallAlert =
+        (type === 'familyalert' || payload.type === 'FamilyAlert') &&
+        (allTextHaystack.includes('fall') || allTextHaystack.includes('fallen') || allTextHaystack.includes('posture'));
 
       const emergencyKeywordsList = [
         'need help', 'i need help', 'i have fallen', 'have fallen', 'fallen', 'i fell',
@@ -1734,28 +1758,27 @@ export default function ElderScreen() {
         (kw) => allTextHaystack.includes(kw) || lowerText.includes(kw)
       );
 
-      // CRITICAL: Safe confirmation, monitor action, or acknowledgment must NEVER be treated as emergency!
+      // Safe / Ack check: NEVER treat explicit safe or ack messages as emergencies
+      // Note: We check exact status and words, NOT loose substring 'safe' which matches 'safety'
       const isSafeOrAckMessage =
+        isExplicitSafeResolution ||
+        isAck ||
         action === 'monitor' ||
         action === 'acknowledge' ||
-        severity === 'low' ||
-        allTextHaystack.includes('safe') ||
-        allTextHaystack.includes('cancelled') ||
-        allTextHaystack.includes('resolved') ||
-        allTextHaystack.includes('acknowledged');
+        (severity === 'low' && !isEmergencyType && !hasEmergencyKeyword);
 
       const isCriticalEmergency =
         !isSafeOrAckMessage &&
-        (isEmergencyAction || isEmergencySeverity || isEmergencyType || hasEmergencyKeyword);
+        (isEmergencyAction || isEmergencySeverity || isEmergencyType || isHubFallDecision || isHubFamilyFallAlert || hasEmergencyKeyword);
 
       if (isCriticalEmergency) {
         // Strict loop guard: if emergency is already active or already sent, do NOT re-trigger
-        if (fallModalOpenRef.current || emergencyActiveRef.current || hasSentEmergencyRef.current) {
-          console.log('🛡️ Emergency already active / dispatched — suppressing duplicate trigger');
+        if (fallModalOpenRef.current || hasSentEmergencyRef.current) {
+          console.log('🛡️ Fall/Emergency already active or sent — suppressing duplicate trigger');
           return;
         }
 
-        console.log('🚨 Critical Emergency Detected — Enabling Privilege Escalation Modal:', {
+        console.log('🚨 [FALL_ALERT] Critical Fall/Emergency Detected — Launching Fall Verification Modal:', {
           action,
           severity,
           type,
@@ -1776,7 +1799,7 @@ export default function ElderScreen() {
           (t.fallAlertPrompt || 'Kamala, did you fall? Are you fine? Please confirm if you are okay.');
 
         // Show 15s countdown timer — escalation dispatches via onEmergencyEscalate when timer expires
-        triggerFallAlert(alertReason);
+        triggerFallAlert(alertReason, true);
         return;
       }
 
@@ -2036,20 +2059,8 @@ export default function ElderScreen() {
     classifyAndDispatchRef.current = classifyAndDispatchMessage;
   }, [classifyAndDispatchMessage]);
 
-  /**
-   * Router: Ingests every WebSocket event directly into classifyAndDispatchMessage.
-   * Tracks lastHandledMsgRef to guarantee each message is processed exactly once (no loops).
-   */
-  const lastHandledMsgRef = useRef(null);
-  useEffect(() => {
-    if (!lastMessage || lastMessage === lastHandledMsgRef.current) return;
-    lastHandledMsgRef.current = lastMessage;
-    try {
-      classifyAndDispatchMessage(lastMessage);
-    } catch (err) {
-      console.warn('Failed to classify incoming WebSocket message:', err);
-    }
-  }, [lastMessage, classifyAndDispatchMessage]);
+  // Note: All incoming WebSocket messages are processed directly and exactly once
+  // via handleIncomingWsMessage -> classifyAndDispatchRef.current(data).
 
   // Live Event Polling:
   // 1. During active emergency: Fast 2-second check ONLY for family acknowledgment / safe resolution
@@ -2277,27 +2288,35 @@ export default function ElderScreen() {
   const triggerSimulatedVisionEvent = useCallback(
     async (eventType, emotionVal = null) => {
       setShowVisionMenu(false);
+      const eventId = `sim_fall_${Date.now()}`;
       const payload = buildSensorEvent({
         eventType,
         emotion: emotionVal,
         confidence: 0.96,
+        eventId,
       });
 
+      if (eventType === 'fall') {
+        console.log('🚨 [SIMULATOR] Immediate Fall Alert Triggered on Tablet Screen!');
+        processedDecisionsRef.current.add(eventId);
+        triggerFallAlert(t.fallAlertPrompt || 'ShastraVision: Fall detected in living room (Simulation)', true);
+      } else if (eventType === 'emotion_detected') {
+        playGentleChime();
+        speak(t.emotionSadPrompt, selectedLang);
+      } else if (eventType === 'inactivity') {
+        playGentleChime();
+        speak('Inactivity detected. Kamala, are you resting comfortably?', selectedLang);
+      }
+
+      // Asynchronously dispatch to Hub API and WebSocket in the background
       try {
-        await postSensorEvent(payload);
-        if (eventType === 'fall') {
-          setFallReason(t.fallAlertPrompt || 'ಶಾಸ್ತ್ರ ವಿಷನ್: ಕೋಣೆಯಲ್ಲಿ ಹಠಾತ್ ಕುಸಿತ ಪತ್ತೆಯಾಗಿದೆ');
-          setFallModalOpen(true);
-          playEmergencyAlarm();
-        } else if (eventType === 'emotion_detected') {
-          playGentleChime();
-          speak(t.emotionSadPrompt, selectedLang);
-        }
+        postSensorEvent(payload).catch((err) => console.warn('Failed to post simulated vision event to Hub:', err));
+        sendMessage(payload);
       } catch (e) {
-        console.warn('Failed to post simulated vision event:', e);
+        console.warn('Failed to dispatch simulated vision event:', e);
       }
     },
-    [selectedLang, t, speak]
+    [selectedLang, t, speak, triggerFallAlert, sendMessage]
   );
 
   const timeString = currentTime.toLocaleTimeString('en-IN', {
@@ -2416,6 +2435,150 @@ export default function ElderScreen() {
             </nav>
           </div>
         </header>
+
+        {/* ShastraVision Live Perception Simulator Drawer */}
+        {showVisionMenu && (
+          <section className="glass-drawer-panel vision-drawer" role="region" aria-label="ShastraVision Simulator">
+            <div className="drawer-header">
+              <span className="drawer-title">{t.drawerVisionTitle}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="drawer-badge">MediaPipe + DeepFace</span>
+                <button
+                  className="btn-close-drawer"
+                  onClick={() => setShowVisionMenu(false)}
+                  title="Close Drawer"
+                  aria-label="Close Vision Drawer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="drawer-buttons-row">
+              <button
+                className="drawer-btn btn-trigger-fall"
+                onClick={() => triggerSimulatedVisionEvent('fall')}
+              >
+                {t.drawerTriggerFall}
+              </button>
+              <button
+                className="drawer-btn btn-trigger-sad"
+                onClick={() => triggerSimulatedVisionEvent('emotion_detected', 'sad')}
+              >
+                {t.drawerTriggerSad}
+              </button>
+              <button
+                className="drawer-btn btn-trigger-fear"
+                onClick={() => triggerSimulatedVisionEvent('emotion_detected', 'fear')}
+              >
+                {t.drawerTriggerFear}
+              </button>
+              <button
+                className="drawer-btn btn-trigger-inactivity"
+                onClick={() => triggerSimulatedVisionEvent('inactivity')}
+              >
+                {t.drawerTriggerInactivity}
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Family & AI LLM Live Simulators Drawer */}
+        {showFamilySimMenu && (
+          <section className="glass-drawer-panel family-sim-drawer" role="region" aria-label="Family & AI Simulators">
+            <div className="drawer-header">
+              <span className="drawer-title">👨‍👩‍👧 Family Dashboard &amp; AI LLM Live Simulators</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="drawer-badge">Bidirectional Test</span>
+                <button
+                  className="btn-close-drawer"
+                  onClick={() => setShowFamilySimMenu(false)}
+                  title="Close Drawer"
+                  aria-label="Close Family & AI Drawer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="drawer-buttons-row">
+              <button
+                className="drawer-btn drawer-btn-family"
+                onClick={() => simulateIncomingFamilyMessage('Priya (Daughter)', 'Amma, checking in! Did you take your medicine? Coming home at 6 PM! ❤️')}
+              >
+                💬 Msg from Priya
+              </button>
+              <button
+                className="drawer-btn drawer-btn-family"
+                onClick={() => simulateIncomingFamilyCall('Priya (Daughter)')}
+              >
+                📞 Call from Priya
+              </button>
+              <button
+                className="drawer-btn drawer-btn-family"
+                onClick={() => simulateFamilyAcknowledgment('Priya (Daughter)', "Priya acknowledged: 'On my way home Amma! Don\'t worry.'")}
+              >
+                🤝 Family Ack
+              </button>
+              <button
+                className="drawer-btn drawer-btn-family"
+                onClick={() => simulateFamilyMedNudge('Priya (Daughter)', 'Please take your 1:30 PM Calcium pill with water.')}
+              >
+                💊 Med Nudge
+              </button>
+              <button
+                className="drawer-btn drawer-btn-ai"
+                onClick={() => {
+                  setShowFamilySimMenu(false);
+                  simulateAiAgentVoiceCheck();
+                }}
+              >
+                🧠 AI Voice Check
+              </button>
+              <button
+                className="drawer-btn drawer-btn-ai"
+                onClick={() => {
+                  setShowFamilySimMenu(false);
+                  simulateAiAgentEmergencyEscalate();
+                }}
+              >
+                🚨 AI Emergency 112
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Health Check-Ins Drawer */}
+        {showCheckInMenu && (
+          <section className="glass-drawer-panel checkin-drawer" role="region" aria-label="Health Check-ins">
+            <div className="drawer-header">
+              <span className="drawer-title">{t.drawerCheckInTitle}</span>
+              <button
+                className="btn-close-drawer"
+                onClick={() => setShowCheckInMenu(false)}
+                title="Close Drawer"
+                aria-label="Close Check-ins Drawer"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="drawer-buttons-row">
+              <button className="drawer-btn" onClick={() => { triggerCognitive(); setShowCheckInMenu(false); }}>
+                {t.drawerCognitive}
+              </button>
+              <button className="drawer-btn" onClick={() => { triggerMeal('breakfast'); setShowCheckInMenu(false); }}>
+                {t.drawerBreakfast}
+              </button>
+              <button className="drawer-btn" onClick={() => { triggerMeal('lunch'); setShowCheckInMenu(false); }}>
+                {t.drawerLunch}
+              </button>
+              <button className="drawer-btn" onClick={() => { triggerSleep(); setShowCheckInMenu(false); }}>
+                {t.drawerSleep}
+              </button>
+              <button className="drawer-btn" onClick={() => { triggerMobility(); setShowCheckInMenu(false); }}>
+                {t.drawerMobility}
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* ============================================================
             2. BACKEND INCOMING ALERT & PRIVILEGE ESCALATION MODE
@@ -2900,6 +3063,45 @@ export default function ElderScreen() {
             <span className="telemetry-status status-online">
               {isListening ? t.telemetryVoiceListening : isSpeaking ? t.telemetryVoiceSpeaking : t.telemetryVoiceReady}
             </span>
+          </div>
+
+          <div className="telemetry-buttons-group">
+            <button
+              className="btn-footer-tool"
+              onClick={() => {
+                setShowFamilySimMenu((prev) => !prev);
+                setShowVisionMenu(false);
+                setShowCheckInMenu(false);
+              }}
+              title="Family Dashboard & AI Simulators"
+            >
+              👨‍👩‍👧 Family &amp; AI
+            </button>
+            <button
+              className="btn-footer-tool"
+              onClick={() => {
+                setShowVisionMenu((prev) => !prev);
+                setShowFamilySimMenu(false);
+                setShowCheckInMenu(false);
+              }}
+              title="ShastraVision Simulator"
+            >
+              {t.toolVisionSim}
+            </button>
+            <button
+              className="btn-footer-tool"
+              onClick={() => {
+                setShowCheckInMenu((prev) => !prev);
+                setShowVisionMenu(false);
+                setShowFamilySimMenu(false);
+              }}
+              title="Health Check-ins"
+            >
+              {t.toolCheckIns}
+            </button>
+            <button className="btn-footer-tool" onClick={triggerMobility}>
+              {t.toolSteadiness}
+            </button>
           </div>
         </footer>
       </div>

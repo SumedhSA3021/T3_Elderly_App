@@ -100,10 +100,6 @@ export function FallEmergencyModal({
               hasEscalatedRef.current = true;
               setIsEscalated(true);
               if (onEmergencyEscalate) onEmergencyEscalate('Timeout - No Response from Senior');
-              // Auto-close the modal 5 seconds after escalation
-              setTimeout(() => {
-                if (onConfirmSafe) onConfirmSafe();
-              }, 5000);
             }
             return 0;
           }

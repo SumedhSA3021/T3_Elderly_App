@@ -125,7 +125,7 @@ export function useWebSocket(onMessageCallback) {
           // Ignore heartbeat pong/ping responses from server
           if (data && (data.type === 'pong' || data.type === 'ping')) return;
 
-          console.log('🚨 Incoming Team WebSocket Payload:', data);
+          console.log('📡 [WS INBOUND] Received from Hub:', (data && (data.type || data.event_type || data.action)) || 'payload', data);
           setLastMessage(data);
           if (onMessageCallbackRef.current) {
             try {
